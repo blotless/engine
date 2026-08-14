@@ -1,0 +1,55 @@
+rules:
+  - id: container.png_metadata
+    family: c2pa
+    severity: error
+    confidence: certain
+    clean: strip
+    description: PNG C2PA / EXIF / text provenance chunks
+  - id: container.jpeg_metadata
+    family: c2pa
+    severity: error
+    confidence: certain
+    clean: strip
+    description: JPEG APP11 JUMBF/C2PA or AI EXIF/XMP segments
+  - id: container.webp_metadata
+    family: c2pa
+    severity: error
+    confidence: certain
+    clean: strip
+    description: WebP RIFF C2PA / EXIF / XMP provenance chunks
+  - id: container.html_meta
+    family: metadata
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: HTML AI generator / C2PA / JSON-LD provenance markup
+  - id: container.md_front_matter
+    family: metadata
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: Markdown YAML front matter with AI provenance keys
+  - id: container.svg_metadata
+    family: metadata
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: SVG metadata / XMP provenance blocks
+  - id: container.pdf_metadata
+    family: metadata
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: PDF XMP / Info Producer-Creator AI provenance (qpdf linearize when available)
+  - id: container.docx_metadata
+    family: metadata
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: DOCX docProps / customXml AI provenance
+  - id: container.odt_metadata
+    family: metadata
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: ODT meta.xml generator / creator AI provenance

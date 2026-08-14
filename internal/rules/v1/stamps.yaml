@@ -1,0 +1,31 @@
+rules:
+  - id: stamp.co_authored_by_ai
+    family: stamp
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: Co-authored-by trailer naming an AI agent
+  - id: stamp.generated_by_ai
+    family: stamp
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: Generated-by header naming an AI agent
+  - id: stamp.ai_generated
+    family: stamp
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: Explicit AI-generated marker
+  - id: stamp.html_ai_comment
+    family: stamp
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: HTML/Markdown comment naming an AI agent
+  - id: stamp.ai_boilerplate
+    family: stamp
+    severity: info
+    confidence: likely
+    clean: strip
+    description: Likely AI-assistant boilerplate prose

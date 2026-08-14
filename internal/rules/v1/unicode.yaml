@@ -1,0 +1,127 @@
+rules:
+  - id: unicode.zwsp
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: Zero-width space (U+200B)
+  - id: unicode.zwnj
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: Zero-width non-joiner (U+200C)
+  - id: unicode.zwj
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: Zero-width joiner (U+200D) outside an emoji sequence
+  - id: unicode.word_joiner
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: Word joiner (U+2060)
+  - id: unicode.bom
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: Byte order mark (U+FEFF)
+  - id: unicode.soft_hyphen
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: Soft hyphen (U+00AD)
+  - id: unicode.bidi
+    family: unicode
+    severity: error
+    confidence: certain
+    clean: report_only
+    description: Bidirectional control character
+  - id: unicode.vs
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: Unicode variation selector
+  - id: unicode.vs_supplement
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: Unicode variation selector supplement
+  - id: unicode.tags
+    family: unicode
+    severity: error
+    confidence: certain
+    clean: strip
+    description: Unicode tag character (language tags / steganography)
+  - id: unicode.nbsp
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: normalize
+    description: No-break space (U+00A0)
+  - id: unicode.nnbsp
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: normalize
+    description: Narrow no-break space (U+202F)
+  - id: unicode.figure_space
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: normalize
+    description: Figure space (U+2007)
+  - id: unicode.thin_space
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: normalize
+    description: Thin space (U+2009)
+  - id: unicode.hair_space
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: normalize
+    description: Hair space (U+200A)
+  - id: unicode.em_space
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: normalize
+    description: Em space (U+2003)
+  - id: unicode.en_space
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: normalize
+    description: En space (U+2002)
+  - id: unicode.space_homoglyph
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: normalize
+    description: Exotic space homoglyph (Ogham, en/em quad, ideographic, ...)
+  - id: unicode.format
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: Invisible format control (CGJ, Mongolian FVS, invisible math ops, ...)
+  - id: unicode.other_cf
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: strip
+    description: Other Unicode format (Cf) control not covered by a named rule
+  - id: unicode.confusable
+    family: unicode
+    severity: warning
+    confidence: certain
+    clean: normalize
+    description: Latin lookalike (Cyrillic/Greek/fullwidth) in Latin context (--aggressive)
