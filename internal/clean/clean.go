@@ -10,8 +10,8 @@ import (
 
 	"golang.org/x/text/unicode/norm"
 
-	"github.com/blotless/engine/internal/astgo"
 	"github.com/blotless/engine/domain"
+	"github.com/blotless/engine/internal/astgo"
 	"github.com/blotless/engine/internal/classify"
 	"github.com/blotless/engine/internal/detect/homoglyph"
 	"github.com/blotless/engine/ports"

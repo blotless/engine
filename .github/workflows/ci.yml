@@ -49,8 +49,14 @@ jobs:
         run: go vet ./...
 
       - name: Test
+        if: matrix.os != 'windows-latest'
         shell: bash
         run: go test -race -count=1 -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Test (windows, no race — race requires CGO)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: go test -count=1 -coverprofile=coverage.txt -covermode=atomic ./...
 
       - name: Vulncheck
         if: matrix.os == 'ubuntu-latest'

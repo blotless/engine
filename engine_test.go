@@ -683,5 +683,5 @@ type fakeProgress struct {
 }
 
 func (p *fakeProgress) File(done, total int, path, detector string) { p.files++ }
-func (p *fakeProgress) Finding(domain.Finding)                     { p.findings++ }
-func (p *fakeProgress) Finish()                                    {}
+func (p *fakeProgress) Finding(domain.Finding)                      { p.findings++ }
+func (p *fakeProgress) Finish()                                     {}

@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/blotless/engine/internal/astgo"
 	"github.com/blotless/engine/domain"
+	"github.com/blotless/engine/internal/astgo"
 	"github.com/blotless/engine/internal/detect/homoglyph"
 	"github.com/blotless/engine/internal/rules"
 	"github.com/blotless/engine/ports"

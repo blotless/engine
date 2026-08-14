@@ -7,8 +7,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/blotless/engine/internal/astgo"
 	"github.com/blotless/engine/domain"
+	"github.com/blotless/engine/internal/astgo"
 	"github.com/blotless/engine/internal/classify"
 	"github.com/blotless/engine/internal/comment"
 	"github.com/blotless/engine/internal/rules"

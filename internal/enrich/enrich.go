@@ -3,8 +3,8 @@ package enrich
 import (
 	"strings"
 
-	"github.com/blotless/engine/internal/astgo"
 	"github.com/blotless/engine/domain"
+	"github.com/blotless/engine/internal/astgo"
 	"github.com/blotless/engine/internal/snippet"
 )
 
