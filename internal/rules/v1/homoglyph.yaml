@@ -1,0 +1,19 @@
+rules:
+  - id: homoglyph.ident
+    family: homoglyph
+    severity: error
+    confidence: certain
+    clean: normalize
+    description: Identifier mixes Latin and lookalike scripts
+  - id: homoglyph.yaml_key
+    family: homoglyph
+    severity: error
+    confidence: certain
+    clean: normalize
+    description: YAML key mixes Latin and lookalike scripts
+  - id: homoglyph.json_key
+    family: homoglyph
+    severity: error
+    confidence: certain
+    clean: normalize
+    description: JSON key mixes Latin and lookalike scripts

@@ -1,0 +1,13 @@
+rules:
+  - id: statwm.layer_b_prose
+    family: heuristic
+    severity: info
+    confidence: heuristic
+    clean: rewrite
+    description: Statistical token-sampling watermark reduction via paraphrase (Layer B)
+  - id: statwm.layer_b_comment
+    family: heuristic
+    severity: info
+    confidence: heuristic
+    clean: rewrite
+    description: Comment paraphrase to break n-gram sampling watermarks (Layer B)

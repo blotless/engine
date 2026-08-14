@@ -1,0 +1,25 @@
+rules:
+  - id: c2pa.unstructured
+    family: c2pa
+    severity: error
+    confidence: certain
+    clean: strip
+    description: C2PA unstructured text embedding (variation-selector run)
+  - id: c2pa.structured
+    family: c2pa
+    severity: error
+    confidence: certain
+    clean: strip
+    description: C2PA structured ASCII armour manifest block
+  - id: c2pa.html_script
+    family: c2pa
+    severity: error
+    confidence: certain
+    clean: strip
+    description: C2PA HTML script manifest (type=application/c2pa)
+  - id: c2pa.html_link
+    family: c2pa
+    severity: error
+    confidence: certain
+    clean: strip
+    description: C2PA HTML link rel=c2pa-manifest
