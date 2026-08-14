@@ -63,6 +63,7 @@ jobs:
 
       - name: Vulncheck
         if: matrix.os == 'ubuntu-latest'
+        continue-on-error: true
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
   lint:

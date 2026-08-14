@@ -69,8 +69,7 @@ func rewriteZip(data []byte, part func(name string, raw []byte, actions *[]strin
 			_ = zw.Close()
 			return nil, "", err
 		}
-		keep := true
-		raw, keep = part(f.Name, raw, &actions)
+		raw, keep := part(f.Name, raw, &actions)
 		if !keep {
 			continue
 		}

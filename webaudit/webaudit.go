@@ -109,7 +109,7 @@ func FetchURL(ctx context.Context, client *http.Client, rawURL string, timeout t
 		}}
 	}
 	current := rawURL
-	var expected *origin = allowed
+	expected := allowed
 	for redirect := 0; redirect <= maxRedirects; redirect++ {
 		o, addrs, err := validatedTarget(current, expected)
 		if err != nil {
@@ -361,11 +361,6 @@ func parseSitemap(data []byte) (kind string, locs []string, err error) {
 		XMLName xml.Name
 		Locs    []string `xml:"url>loc"`
 		Maps    []string `xml:"sitemap>loc"`
-	}
-	// Manual walk for namespaces
-	type node struct {
-		XMLName xml.Name
-		Content []byte `xml:",innerxml"`
 	}
 	_ = root
 	locs = nil

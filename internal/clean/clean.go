@@ -39,9 +39,6 @@ func (p Planner) Plan(u domain.Unit, findings []domain.Finding) (domain.Patch, e
 	findings = fillReplacements(u, findings)
 	var writable []domain.Finding
 	for _, f := range findings {
-		if f.Span.File != u.Path && f.Span.File != "" {
-			// still allow if same unit
-		}
 		if !p.CanClean(f) {
 			patch.Skipped = append(patch.Skipped, f)
 			continue

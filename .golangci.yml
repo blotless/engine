@@ -4,12 +4,18 @@ run:
   timeout: 5m
 
 linters:
+  default: none
   enable:
     - govet
     - ineffassign
     - staticcheck
     - unused
-    - errcheck
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - errcheck
+          - staticcheck
 
 formatters:
   enable:

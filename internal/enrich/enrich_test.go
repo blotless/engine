@@ -10,9 +10,7 @@ import (
 func TestGoFunctionAndSnippet(t *testing.T) {
 	src := []byte("package p\n\nfunc Hello() {\n\tx := \"a\u200b\"\n}\n")
 	u := domain.Unit{Path: "a.go", Bytes: src, Language: domain.LangGo}
-	zw := strings.Index(string(src), "a")
-	// find the a in the string more carefully
-	zw = strings.Index(string(src), "\"a") + 2
+	zw := strings.Index(string(src), "\"a") + 2
 	fs := Findings(u, []domain.Finding{{
 		RuleID: "unicode.zwsp",
 		Span:   domain.Span{File: "a.go", Start: zw, End: zw + 3, Line: 4, Col: 8},
