@@ -1,0 +1,163 @@
+# blotless/engine — pre-release & local checks
+# Requires: Go 1.26+, task (https://taskfile.dev), golangci-lint (optional for lint)
+
+version: "3"
+
+vars:
+  GOTOOLCHAIN: local
+  GOWRAP: unset GOROOT; export GOTOOLCHAIN=local;
+  COVER_OUT: coverage.txt
+  COVER_MIN: "85.0"
+
+env:
+  GOTOOLCHAIN: local
+
+tasks:
+  default:
+    desc: List tasks
+    cmds:
+      - task --list
+
+  fmt:
+    desc: Apply gofmt to all packages
+    cmds:
+      - gofmt -w .
+
+  fmt:check:
+    desc: Fail if any file needs gofmt
+    cmds:
+      - |
+        unset GOROOT
+        export GOTOOLCHAIN=local
+        bad=$(gofmt -l .)
+        if [ -n "$bad" ]; then
+          echo "ERROR: files not formatted:"
+          echo "$bad"
+          exit 1
+        fi
+        echo "gofmt: ok"
+
+  vet:
+    desc: go vet ./...
+    env:
+      CGO_ENABLED: "0"
+    cmds:
+      - '{{.GOWRAP}} go vet ./...'
+
+  tidy:
+    desc: go mod tidy (fail if go.mod/go.sum dirty)
+    cmds:
+      - '{{.GOWRAP}} go mod tidy'
+      - |
+        unset GOROOT
+        export GOTOOLCHAIN=local
+        if ! git diff --quiet -- go.mod go.sum 2>/dev/null; then
+          echo "ERROR: go.mod/go.sum changed after tidy — commit the diff"
+          git diff -- go.mod go.sum || true
+          exit 1
+        fi
+        echo "tidy: ok"
+
+  tidy:write:
+    desc: go mod tidy (write)
+    cmds:
+      - '{{.GOWRAP}} go mod tidy'
+
+  lint:
+    desc: golangci-lint (must match CI)
+    cmds:
+      - '{{.GOWRAP}} golangci-lint run --timeout=5m'
+
+  test:
+    desc: Unit tests (CGO=0, no race)
+    env:
+      CGO_ENABLED: "0"
+    cmds:
+      - '{{.GOWRAP}} go test -count=1 ./...'
+
+  test:race:
+    desc: Race tests (CGO=1; skip on Windows)
+    env:
+      CGO_ENABLED: "1"
+    cmds:
+      - |
+        unset GOROOT
+        export GOTOOLCHAIN=local
+        if [ "{{OS}}" = "windows" ]; then
+          echo "skip race on Windows (requires CGO)"
+          go test -count=1 ./...
+        else
+          go test -race -count=1 ./...
+        fi
+
+  cover:
+    desc: Race + coverage report; enforce COVER_MIN
+    env:
+      CGO_ENABLED: "1"
+    cmds:
+      - |
+        unset GOROOT
+        export GOTOOLCHAIN=local
+        if [ "{{OS}}" = "windows" ]; then
+          go test -count=1 -coverprofile={{.COVER_OUT}} -covermode=atomic ./...
+        else
+          go test -race -count=1 -coverprofile={{.COVER_OUT}} -covermode=atomic ./...
+        fi
+      - '{{.GOWRAP}} go tool cover -func={{.COVER_OUT}} | tail -1'
+      - |
+        pct=$(go tool cover -func={{.COVER_OUT}} | awk '/total:/ {gsub(/%/,"",$NF); print $NF}')
+        awk -v p="$pct" -v m="{{.COVER_MIN}}" 'BEGIN {
+          if ((p+0) < (m+0)) { printf "ERROR: coverage %.1f%% < %s%%\n", p, m; exit 1 }
+          printf "coverage: %.1f%% (>= %s%%)\n", p, m
+        }'
+
+  build:
+    desc: Compile all packages (CGO=0)
+    env:
+      CGO_ENABLED: "0"
+    cmds:
+      - '{{.GOWRAP}} go build ./...'
+
+  build:cross:
+    desc: Cross-compile linux/darwin/windows amd64+arm64
+    env:
+      CGO_ENABLED: "0"
+    cmds:
+      - '{{.GOWRAP}} GOOS=linux   GOARCH=amd64 go build ./...'
+      - '{{.GOWRAP}} GOOS=linux   GOARCH=arm64 go build ./...'
+      - '{{.GOWRAP}} GOOS=darwin  GOARCH=amd64 go build ./...'
+      - '{{.GOWRAP}} GOOS=darwin  GOARCH=arm64 go build ./...'
+      - '{{.GOWRAP}} GOOS=windows GOARCH=amd64 go build ./...'
+
+  vuln:
+    desc: govulncheck (advisory; does not fail CI)
+    env:
+      CGO_ENABLED: "0"
+    cmds:
+      - '{{.GOWRAP}} go run golang.org/x/vuln/cmd/govulncheck@latest ./...'
+
+  # --- Pre-release ----------------------------------------------------------
+
+  preflight:
+    desc: Pre-release gate — fmt, vet, tidy, lint, race, cover, cross-build
+    cmds:
+      - task: fmt:check
+      - task: vet
+      - task: tidy
+      - task: lint
+      - task: test:race
+      - task: cover
+      - task: build:cross
+      - 'echo "engine preflight: OK"'
+  ci:
+    desc: Mirror primary CI jobs (fmt + vet + race + lint)
+    cmds:
+      - task: fmt:check
+      - task: vet
+      - task: lint
+      - task: test:race
+
+  clean:
+    desc: Remove coverage artifacts
+    cmds:
+      - rm -f {{.COVER_OUT}} coverage.html

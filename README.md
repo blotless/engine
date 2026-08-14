@@ -37,7 +37,7 @@ Detectors receive a `domain.Unit` (already-loaded bytes). They do not read the f
 | **Go source** | Homoglyph idents; string / `go:generate` protect spans via `internal/astgo` |
 | **Stamps** | AI co-author / generator phrases in comments only |
 | **Clean** | Strip / normalize / rewrite; optional NFKC; `gofmt` for Go |
-| **Build** | `CGO_ENABLED=0`, Go 1.26+ |
+| **Build** | `CGO_ENABLED=0`, Go 1.26+. Pre-release: `task preflight` ([Taskfile.yml](Taskfile.yml)) |
 
 ---
 
