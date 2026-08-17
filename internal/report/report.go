@@ -134,9 +134,18 @@ func writeSummary(w io.Writer, r ports.Report, color bool) error {
 	writeLayers(w, r, color)
 	fmt.Fprintf(w, "AI trace  %s\n", paint(color, scoreColor(r.Score.Percent), scoreLine(r.Score, r.After)))
 	fmt.Fprintf(w, "likely agent  %s\n", paint(color, ansiCyan, agentLine(r.Score, r.After)))
+	if r.Score.Confidence != "" && r.Score.Confidence != domain.ConfidenceNone {
+		fmt.Fprintf(w, "origin confidence  %s\n", r.Score.Confidence)
+	}
+	for i, ev := range r.Score.Evidence {
+		if i >= 3 {
+			break
+		}
+		fmt.Fprintf(w, "  evidence  %s\n", ev)
+	}
 	if r.After == nil {
 		fmt.Fprintln(w, "next  blotless clean . --write")
-		fmt.Fprintln(w, "      blotless clean . --write --layer-b   # agent rewrites B")
+		fmt.Fprintln(w, "      blotless clean . --write --layer-b   # AST transform (+ agent/LLM for prose)")
 		fmt.Fprintln(w, "      blotless clean . --write --llm=ollama --layer-b")
 	}
 	if len(r.Patches) == 0 {
@@ -383,6 +392,12 @@ func SARIF(w io.Writer, r ports.Report, toolVersion string) error {
 	props := map[string]any{
 		"aiTracePercent": r.Score.Percent,
 		"likelyAgent":    r.Score.Label,
+	}
+	if r.Score.Confidence != "" {
+		props["originConfidence"] = string(r.Score.Confidence)
+	}
+	if len(r.Score.Evidence) > 0 {
+		props["originEvidence"] = r.Score.Evidence
 	}
 	if r.After != nil {
 		props["afterPercent"] = r.After.Percent

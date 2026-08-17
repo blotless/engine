@@ -189,8 +189,10 @@ func (p Patch) Changed() bool {
 
 // Score is an aggregate forensic AI-trace estimate for a scan.
 type Score struct {
-	Percent int            `json:"percent" yaml:"percent"`
-	Agent   string         `json:"agent" yaml:"agent"`
-	Label   string         `json:"label" yaml:"label"`
-	Agents  map[string]int `json:"agents,omitempty" yaml:"agents,omitempty"`
+	Percent    int            `json:"percent" yaml:"percent"`
+	Agent      string         `json:"agent" yaml:"agent"`
+	Label      string         `json:"label" yaml:"label"`
+	Agents     map[string]int `json:"agents,omitempty" yaml:"agents,omitempty"`
+	Confidence Confidence     `json:"confidence,omitempty" yaml:"confidence,omitempty"`
+	Evidence   []string       `json:"evidence,omitempty" yaml:"evidence,omitempty"`
 }

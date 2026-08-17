@@ -1,8 +1,13 @@
+<p align="center">
+  <strong>Detection and cleaning engine for blotless</strong><br>
+  Layer A Unicode · Layer B survey + AST/LLM · C2PA / files · origin heuristics<br>
+  Zero CGO
+</p>
+
 <h1 align="center">blotless/engine</h1>
 
 <p align="center">
-  <strong>Detection and cleaning engine for blotless</strong><br>
-  Layer A Unicode, Layer B survey, C2PA / file metadata. Zero CGO.
+  Walk, classify, detect, merge, score, plan patches — embeddable library
 </p>
 
 <p align="center">
@@ -22,7 +27,7 @@
 
 ## Overview
 
-**engine** is the library of the [blotless](https://github.com/blotless) ecosystem — walk, classify, detect, merge, score, and plan patches. The CLI in [blotless/cli](https://github.com/blotless/cli) is a thin Cobra wrapper around `engine.Scan` / `engine.Clean`.
+**engine** is the library of the [blotless](https://github.com/blotless) ecosystem. The CLI in [blotless/cli](https://github.com/blotless/cli) is a thin Cobra wrapper around `engine.Scan` / `engine.Clean`. Language transforms use [blotless/ast](https://github.com/blotless/ast). These are **separate GitHub repositories**.
 
 Detectors receive a `domain.Unit` (already-loaded bytes). They do not read the filesystem.
 
@@ -31,13 +36,14 @@ Detectors receive a `domain.Unit` (already-loaded bytes). They do not read the f
 | Category | Capabilities |
 |----------|--------------|
 | **Layer A** | Invisible Unicode, exotic spaces, bidi, tags, VS, other Cf, Latin confusables |
-| **Layer B** | Eligibility survey; `engine/rewrite` hook; optional Ollama / openai (`paraphrase` / `humanize` / `code` / `backtranslate` / `structural`) |
+| **Origin** | Soft fingerprints → `Score.Agent` / `Confidence` / `Evidence` (not SynthID verify) |
+| **Layer B** | Eligibility survey; `ast.Transform`; optional Ollama / openai rewrite |
 | **Files** | C2PA / EXIF / XMP in PNG, JPEG, WebP, SVG, PDF, DOCX, ODT, HTML, Markdown |
 | **Web audit** | `engine/webaudit` — SSRF-safe sitemap fetch |
-| **Go source** | Homoglyph idents; string / `go:generate` protect spans via `internal/astgo` |
-| **Stamps** | AI co-author / generator phrases in comments only |
+| **Go source** | Homoglyph idents; protect spans via `blotless/ast/golang` |
+| **Stamps** | AI co-author / generator phrases in comments |
 | **Clean** | Strip / normalize / rewrite; optional NFKC; `gofmt` for Go |
-| **Build** | `CGO_ENABLED=0`, Go 1.26+. Pre-release: `task preflight` ([Taskfile.yml](Taskfile.yml)) |
+| **Build** | `CGO_ENABLED=0`, Go 1.26+; `task preflight` |
 
 ---
 
@@ -47,7 +53,7 @@ Detectors receive a `domain.Unit` (already-loaded bytes). They do not read the f
 go get github.com/blotless/engine
 ```
 
-**Requirements:** Go 1.26+, `CGO_ENABLED=0`.
+**Requirements:** Go 1.26+, `CGO_ENABLED=0`. Depends on [`github.com/blotless/ast`](https://github.com/blotless/ast).
 
 ---
 
@@ -67,6 +73,7 @@ func main() {
 	eng, err := engine.New(engine.Config{
 		Paths:      []string{"."},
 		Aggressive: true,
+		LayerB:     true,
 	})
 	if err != nil {
 		panic(err)
@@ -77,9 +84,33 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("findings=%d score=%d\n", len(res.Findings), res.Score.Percent)
+	fmt.Printf("findings=%d score=%d%% agent=%s conf=%s\n",
+		len(res.Findings), res.Score.Percent, res.Score.Agent, res.Score.Confidence)
 }
 ```
+
+### Clean with a WASM language plugin
+
+Plugin tutorial: [blotless/ast — WASM](https://github.com/blotless/ast#add-a-language-via-wasm-no-go-required). Example crate: [examples/wasm-rust](https://github.com/blotless/ast/tree/main/examples/wasm-rust).
+
+```go
+eng, err := engine.New(engine.Config{
+    Paths:   []string{"."},
+    Write:   true,
+    LayerB:  true,
+    AstWASM: map[string]string{
+        "rust": "./blotless_rust_transform.wasm", // also maps .rs
+    },
+    // AstExt: map[string]string{".zig": "zig"},
+})
+if err != nil {
+    panic(err)
+}
+defer eng.Close()
+_, err = eng.Clean(context.Background())
+```
+
+Equivalent CLI: `blotless clean . --write --layer-b --ast-wasm rust=./blotless_rust_transform.wasm`
 
 ---
 
@@ -88,10 +119,12 @@ func main() {
 ```
 walk → classify → detect → protect → merge → score
                               │
-clean ← plan ← optional LLM ← Layer B survey
+clean ← plan ← ast.Transform / optional LLM ← Layer B survey
 ```
 
 Public surface: `engine.Config`, `engine.Scan`, `engine.Clean`, `engine.Rules`, `domain`, `ports`.
+
+Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
@@ -99,18 +132,39 @@ Public surface: `engine.Config`, `engine.Scan`, `engine.Clean`, `engine.Rules`, 
 
 | Project | Description |
 |---------|-------------|
-| [blotless/engine](https://github.com/blotless/engine) | **Detection / clean library (this repo)** |
-| [blotless/cli](https://github.com/blotless/cli) | Command-line interface |
-| [blotless/skills](https://github.com/blotless/skills) | Agent skill package (calls `blotless` on PATH) |
+| [blotless/engine](https://github.com/blotless/engine) | **This repo** |
+| [blotless/ast](https://github.com/blotless/ast) | AST transform + WASM |
+| [blotless/cli](https://github.com/blotless/cli) | CLI |
+| [blotless/skills](https://github.com/blotless/skills) | Agent skills |
+
+---
+
+## Development
+
+```bash
+git clone https://github.com/blotless/engine
+cd engine
+CGO_ENABLED=0 go test ./...
+task preflight
+```
+
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- [SECURITY.md](SECURITY.md)
+- [ROADMAP.md](ROADMAP.md)
+
+---
+
+## Disclaimer
+
+Layer B is best-effort. Origin scores are heuristic. Do not claim certified human authorship.
 
 ---
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License — see [LICENSE](LICENSE).
 
 ---
 
-<p align="center">
-  <strong>blotless</strong> — inspect first, then clean
-</p>
+<p align="center"><strong>blotless</strong> — inspect first, then clean</p>

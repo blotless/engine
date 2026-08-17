@@ -144,4 +144,45 @@ func TestHeuristicGeneric(t *testing.T) {
 	if s.Agent != "generic" {
 		t.Fatalf("%+v", s)
 	}
+	if s.Confidence != domain.ConfidenceHeuristic {
+		t.Fatalf("confidence=%s", s.Confidence)
+	}
+}
+
+func TestOriginHeuristicNamesAgent(t *testing.T) {
+	s := Compute([]domain.Finding{{
+		RuleID:     "origin.named.claude",
+		Family:     domain.FamilyHeuristic,
+		Confidence: domain.ConfidenceHeuristic,
+		Evidence:   "refined with Claude",
+		Span:       domain.Span{File: "a.go", Start: 0, End: 10},
+	}}, 1)
+	if s.Agent != "claude" || s.Confidence != domain.ConfidenceHeuristic {
+		t.Fatalf("%+v", s)
+	}
+	if len(s.Evidence) == 0 {
+		t.Fatal("expected evidence")
+	}
+}
+
+func TestStampOverridesHeuristic(t *testing.T) {
+	s := Compute([]domain.Finding{
+		{
+			RuleID:     "origin.named.claude",
+			Family:     domain.FamilyHeuristic,
+			Confidence: domain.ConfidenceHeuristic,
+			Evidence:   "Claude",
+			Span:       domain.Span{File: "a.go", Start: 0, End: 5},
+		},
+		{
+			RuleID:     "stamp.co_authored_by_ai",
+			Family:     domain.FamilyStamp,
+			Confidence: domain.ConfidenceCertain,
+			Evidence:   "Co-authored-by: Cursor <c@x>",
+			Span:       domain.Span{File: "a.go", Start: 10, End: 20},
+		},
+	}, 1)
+	if s.Agent != "cursor" || s.Confidence != domain.ConfidenceLikely {
+		t.Fatalf("%+v", s)
+	}
 }

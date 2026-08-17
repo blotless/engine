@@ -7,8 +7,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/blotless/ast/golang"
 	"github.com/blotless/engine/domain"
-	"github.com/blotless/engine/internal/astgo"
 	"github.com/blotless/engine/internal/classify"
 	"github.com/blotless/engine/internal/comment"
 	"github.com/blotless/engine/internal/rules"
@@ -100,18 +100,18 @@ func (Detector) Scan(_ context.Context, u domain.Unit) ([]domain.Finding, error)
 	return out, nil
 }
 
-func goStringSpans(u domain.Unit) []astgo.Span {
+func goStringSpans(u domain.Unit) []golang.Span {
 	if u.Language != domain.LangGo && !strings.HasSuffix(strings.ToLower(u.Path), ".go") {
 		return nil
 	}
-	f, err := astgo.Parse(u.Path, u.Bytes)
+	f, err := golang.Parse(u.Path, u.Bytes)
 	if err != nil {
 		return nil
 	}
 	return f.StringSpans()
 }
 
-func inGoString(start, end int, strs []astgo.Span) bool {
+func inGoString(start, end int, strs []golang.Span) bool {
 	for _, s := range strs {
 		if start < s.End && s.Start < end {
 			return true

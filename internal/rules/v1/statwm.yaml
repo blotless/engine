@@ -11,3 +11,9 @@ rules:
     confidence: heuristic
     clean: rewrite
     description: Comment paraphrase to break n-gram sampling watermarks (Layer B)
+  - id: statwm.ast_transform
+    family: heuristic
+    severity: info
+    confidence: heuristic
+    clean: rewrite
+    description: AST token transform (rename/reorder) against sampling watermarks

@@ -42,7 +42,7 @@ var familyCap = map[domain.Family]int{
 // Compute estimates an AI-trace percent and the closest named agent.
 func Compute(findings []domain.Finding, filesScanned int) domain.Score {
 	if len(findings) == 0 {
-		return domain.Score{Percent: 0, Agent: "none", Label: "none"}
+		return domain.Score{Percent: 0, Agent: "none", Label: "none", Confidence: domain.ConfidenceNone}
 	}
 
 	files := map[string]struct{}{}
@@ -50,6 +50,7 @@ func Compute(findings []domain.Finding, filesScanned int) domain.Score {
 	votes := map[string]int{}
 	stampVotes := map[string]int{}
 	hintVotes := map[string]int{}
+	var evidence []string
 	forensic, heuristic := false, false
 
 	for _, f := range findings {
@@ -71,11 +72,18 @@ func Compute(findings []domain.Finding, filesScanned int) domain.Score {
 			} else {
 				hintVotes[id] += n
 			}
+			if len(evidence) < 5 {
+				ev := f.RuleID
+				if f.Evidence != "" {
+					ev = f.RuleID + ": " + trimEv(f.Evidence)
+				}
+				evidence = append(evidence, ev)
+			}
 		}
 	}
 
 	if len(files) == 0 {
-		return domain.Score{Percent: 0, Agent: "none", Label: "none"}
+		return domain.Score{Percent: 0, Agent: "none", Label: "none", Confidence: domain.ConfidenceNone}
 	}
 
 	raw := 0
@@ -99,13 +107,23 @@ func Compute(findings []domain.Finding, filesScanned int) domain.Score {
 		percent = 100
 	}
 
-	agent, label := pickAgents(stampVotes, hintVotes, forensic, heuristic)
+	agent, label, conf := pickAgents(stampVotes, hintVotes, forensic, heuristic)
 	return domain.Score{
-		Percent: percent,
-		Agent:   agent,
-		Label:   label,
-		Agents:  nonempty(votes),
+		Percent:    percent,
+		Agent:      agent,
+		Label:      label,
+		Agents:     nonempty(votes),
+		Confidence: conf,
+		Evidence:   evidence,
 	}
+}
+
+func trimEv(s string) string {
+	s = strings.TrimSpace(s)
+	if len(s) > 80 {
+		return s[:77] + "..."
+	}
+	return s
 }
 
 func weight(f domain.Finding) int {
@@ -135,15 +153,24 @@ func weight(f domain.Finding) int {
 }
 
 func agentVote(f domain.Finding) (string, int, bool) {
-	if f.Family == domain.FamilyStamp || f.Family == domain.FamilyC2PA || f.Family == domain.FamilyMetadata {
-		if id := matchAgentText(strings.Join([]string{f.Evidence, f.Message, f.RuleID}, " ")); id != "" {
+	text := strings.Join([]string{f.Evidence, f.Message, f.RuleID}, " ")
+	switch f.Family {
+	case domain.FamilyStamp, domain.FamilyC2PA, domain.FamilyMetadata:
+		if id := matchAgentText(text); id != "" {
 			n := 3
 			if f.Confidence == domain.ConfidenceCertain {
 				n = 10
 			}
 			return id, n, true
 		}
-		return "", 0, false
+	case domain.FamilyHeuristic:
+		if id := matchAgentText(text); id != "" {
+			n := 2
+			if strings.HasPrefix(f.RuleID, "origin.named.") {
+				n = 4
+			}
+			return id, n, false
+		}
 	}
 	return "", 0, false
 }
@@ -157,20 +184,20 @@ func matchAgentText(text string) string {
 	return ""
 }
 
-func pickAgents(stamp, hint map[string]int, forensic, heuristic bool) (string, string) {
+func pickAgents(stamp, hint map[string]int, forensic, heuristic bool) (string, string, domain.Confidence) {
 	if id, label := namedFrom(stamp); id != "" {
-		return id, label
+		return id, label, domain.ConfidenceLikely
 	}
 	if id, label := namedFrom(hint); id != "" {
-		return id, label
+		return id, label, domain.ConfidenceHeuristic
 	}
 	if forensic {
-		return "unknown", "unknown (forensic marks)"
+		return "unknown", "unknown (forensic marks)", domain.ConfidenceLikely
 	}
 	if heuristic {
-		return "generic", "likely AI-generated"
+		return "generic", "likely AI-generated", domain.ConfidenceHeuristic
 	}
-	return "none", "none"
+	return "none", "none", domain.ConfidenceNone
 }
 
 func namedFrom(votes map[string]int) (string, string) {

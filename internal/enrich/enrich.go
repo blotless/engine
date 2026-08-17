@@ -3,16 +3,16 @@ package enrich
 import (
 	"strings"
 
+	"github.com/blotless/ast/golang"
 	"github.com/blotless/engine/domain"
-	"github.com/blotless/engine/internal/astgo"
 	"github.com/blotless/engine/internal/snippet"
 )
 
 // Findings adds snippet, function, symbol, and kind to each hit.
 func Findings(u domain.Unit, fs []domain.Finding) []domain.Finding {
-	var goFile *astgo.File
+	var goFile *golang.File
 	if u.Language == domain.LangGo {
-		goFile, _ = astgo.Parse(u.Path, u.Bytes)
+		goFile, _ = golang.Parse(u.Path, u.Bytes)
 	}
 	out := make([]domain.Finding, 0, len(fs))
 	for _, f := range fs {
