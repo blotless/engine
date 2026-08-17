@@ -1,0 +1,37 @@
+rules:
+  - id: origin.named.claude
+    family: heuristic
+    severity: info
+    confidence: heuristic
+    clean: report_only
+    description: Soft mention of Claude/Anthropic without formal stamp
+  - id: origin.named.chatgpt
+    family: heuristic
+    severity: info
+    confidence: heuristic
+    clean: report_only
+    description: Soft mention of ChatGPT/OpenAI without formal stamp
+  - id: origin.named.gemini
+    family: heuristic
+    severity: info
+    confidence: heuristic
+    clean: report_only
+    description: Soft mention of Gemini/Bard without formal stamp
+  - id: origin.named.copilot
+    family: heuristic
+    severity: info
+    confidence: heuristic
+    clean: report_only
+    description: Soft mention of GitHub Copilot without formal stamp
+  - id: origin.named.cursor
+    family: heuristic
+    severity: info
+    confidence: heuristic
+    clean: report_only
+    description: Soft mention of Cursor agent without formal stamp
+  - id: origin.style.boilerplate
+    family: heuristic
+    severity: info
+    confidence: heuristic
+    clean: report_only
+    description: Assistant-style boilerplate phrasing (origin hint)

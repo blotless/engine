@@ -70,7 +70,10 @@ func New() {}
 		RuleID: "stamp.co_authored_by_ai",
 		Family: domain.FamilyStamp,
 	}}, false, "")
-	if len(fs) != 1 || fs[0].RuleID != "statwm.layer_b_comment" {
+	if len(fs) != 2 {
+		t.Fatalf("%#v", fs)
+	}
+	if fs[0].RuleID != "statwm.ast_transform" || fs[1].RuleID != "statwm.layer_b_comment" {
 		t.Fatalf("%#v", fs)
 	}
 }

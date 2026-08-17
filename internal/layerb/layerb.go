@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/blotless/ast"
 	"github.com/blotless/engine/domain"
 	"github.com/blotless/engine/internal/comment"
 	"github.com/blotless/engine/internal/rules"
@@ -26,19 +27,29 @@ func Plan(u domain.Unit, existing []domain.Finding, force bool, strength string)
 		return nil
 	}
 	strength = normalizeStrength(strength)
+	var out []domain.Finding
+	if lang, ok := ast.LangFromPath(u.Path); ok && ast.HasDriver(lang) {
+		out = append(out, rules.Apply(domain.Finding{
+			Span:    domain.Span{File: u.Path, Start: 0, End: len(u.Bytes), Line: 1, Col: 1},
+			Kind:    "structural",
+			Message: "Layer B AST transform (" + string(lang) + ")",
+		}, "statwm.ast_transform"))
+	}
 	if proseFile(u.Path) && utf8.RuneCount(u.Bytes) >= minProseRunes {
 		end := len(u.Bytes)
 		kind := strength
 		if kind == "code" {
 			kind = "paraphrase"
 		}
-		return []domain.Finding{rules.Apply(domain.Finding{
+		out = append(out, rules.Apply(domain.Finding{
 			Span:    domain.Span{File: u.Path, Start: 0, End: end, Line: 1, Col: 1},
 			Kind:    kind,
-			Message: "Layer B " + kind + " (token-level churn)",
-		}, "statwm.layer_b_prose")}
+			Message: "Layer B " + kind + " (token-level rewrite)",
+		}, "statwm.layer_b_prose"))
+		return out
 	}
-	return commentFindings(u, strength)
+	out = append(out, commentFindings(u, strength)...)
+	return out
 }
 
 func normalizeStrength(s string) string {
@@ -59,7 +70,7 @@ func normalizeStrength(s string) string {
 func aiMarked(fs []domain.Finding) bool {
 	for _, f := range fs {
 		switch f.Family {
-		case domain.FamilyStamp, domain.FamilyC2PA, domain.FamilyUnicode, domain.FamilyMetadata:
+		case domain.FamilyStamp, domain.FamilyC2PA, domain.FamilyUnicode, domain.FamilyMetadata, domain.FamilyHeuristic:
 			return true
 		}
 	}

@@ -9,12 +9,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blotless/ast"
 	"github.com/blotless/engine/domain"
 	"github.com/blotless/engine/internal/classify"
 	"github.com/blotless/engine/internal/clean"
 	astdet "github.com/blotless/engine/internal/detect/ast"
 	"github.com/blotless/engine/internal/detect/c2pa"
 	"github.com/blotless/engine/internal/detect/container"
+	"github.com/blotless/engine/internal/detect/origin"
 	"github.com/blotless/engine/internal/detect/stamp"
 	unicodedet "github.com/blotless/engine/internal/detect/unicode"
 	"github.com/blotless/engine/internal/enrich"
@@ -65,6 +67,8 @@ type Config struct {
 	Gofmt          bool
 	LayerB         bool
 	LayerBStrength string
+	AstWASM        map[string]string // lang -> local .wasm path
+	AstExt         map[string]string // ".rs" -> "rust"
 	NFKC           bool
 	ForceText      bool
 	ForceKind      string // auto|text|image|container
@@ -143,8 +147,17 @@ func New(cfg Config) (*Engine, error) {
 		unicodedet.Detector{Aggressive: cfg.Aggressive},
 		c2pa.Detector{},
 		stamp.Detector{},
+		origin.Detector{},
 		container.Detector{},
 		astDet,
+	}
+	for lang, path := range cfg.AstWASM {
+		if err := ast.RegisterWASM(ast.Lang(lang), path); err != nil {
+			return nil, err
+		}
+	}
+	for ext, lang := range cfg.AstExt {
+		ast.MapExt(ext, ast.Lang(lang))
 	}
 	return &Engine{
 		cfg:       cfg,
@@ -270,19 +283,46 @@ func (e *Engine) run(ctx context.Context, planClean bool) (*Result, error) {
 		for _, u := range list {
 			fs := append([]domain.Finding(nil), byFile[u.Path]...)
 			bHits := layerb.Plan(u, fs, e.cfg.LayerB, e.cfg.LayerBStrength)
-			if liveLLM {
-				fs = append(fs, bHits...)
-				fs = e.rewrite(ctx, u, fs)
-			} else if len(bHits) > 0 {
-				for i := range bHits {
-					bHits[i].Clean = domain.CleanReportOnly
-					bHits[i].Message = "Layer B: rewrite in the agent, or blotless clean --llm=ollama --layer-b"
+			wantTransform := false
+			var llmHits []domain.Finding
+			for _, h := range bHits {
+				if h.RuleID == "statwm.ast_transform" {
+					wantTransform = true
+					continue
 				}
-				fs = append(fs, bHits...)
+				llmHits = append(llmHits, h)
+			}
+			if liveLLM {
+				fs = append(fs, llmHits...)
+				fs = e.rewrite(ctx, u, fs)
+			} else if len(llmHits) > 0 {
+				for i := range llmHits {
+					llmHits[i].Clean = domain.CleanReportOnly
+					llmHits[i].Message = "Layer B: rewrite in the agent, or blotless clean --llm=ollama --layer-b"
+				}
+				fs = append(fs, llmHits...)
 			}
 			p, err := e.planner.Plan(u, fs)
 			if err != nil {
 				return res, err
+			}
+			if wantTransform {
+				cur := p.Updated
+				if cur == nil {
+					cur = append([]byte(nil), u.Bytes...)
+				}
+				if lang, ok := ast.LangFromPath(u.Path); ok {
+					out, rep, err := ast.Transform(lang, cur, ast.DefaultOpts())
+					if err == nil && rep.Changed {
+						p.Updated = out
+						p.Applied = append(p.Applied, rules.Apply(domain.Finding{
+							Span:    domain.Span{File: u.Path, Start: 0, End: len(cur), Line: 1, Col: 1},
+							Kind:    "structural",
+							Message: fmt.Sprintf("AST transform %s renamed=%d reordered=%d", lang, rep.Renamed, rep.Reordered),
+							Clean:   domain.CleanRewrite,
+						}, "statwm.ast_transform"))
+					}
+				}
 			}
 			if p.Changed() {
 				res.Patches = append(res.Patches, p)
@@ -396,6 +436,10 @@ func (e *Engine) rewrite(ctx context.Context, u domain.Unit, fs []domain.Finding
 	out := make([]domain.Finding, 0, len(fs))
 	for _, f := range fs {
 		if f.Clean != domain.CleanRewrite {
+			out = append(out, f)
+			continue
+		}
+		if f.RuleID == "statwm.ast_transform" {
 			out = append(out, f)
 			continue
 		}

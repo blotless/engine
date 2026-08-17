@@ -10,8 +10,8 @@ import (
 
 	"golang.org/x/text/unicode/norm"
 
+	"github.com/blotless/ast/golang"
 	"github.com/blotless/engine/domain"
-	"github.com/blotless/engine/internal/astgo"
 	"github.com/blotless/engine/internal/classify"
 	"github.com/blotless/engine/internal/detect/homoglyph"
 	"github.com/blotless/engine/ports"
@@ -94,8 +94,8 @@ func fillReplacements(u domain.Unit, fs []domain.Finding) []domain.Finding {
 	taken := map[string]struct{}{}
 	mapping := map[string]string{}
 	if u.Language == domain.LangGo {
-		if f, err := astgo.Parse(u.Path, u.Bytes); err == nil {
-			f.WalkIdents(func(id astgo.Ident) {
+		if f, err := golang.Parse(u.Path, u.Bytes); err == nil {
+			f.WalkIdents(func(id golang.Ident) {
 				taken[id.Name] = struct{}{}
 			})
 		}

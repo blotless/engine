@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/blotless/ast/golang"
 	"github.com/blotless/engine/domain"
-	"github.com/blotless/engine/internal/astgo"
 	"github.com/blotless/engine/internal/detect/homoglyph"
 	"github.com/blotless/engine/internal/rules"
 	"github.com/blotless/engine/ports"
@@ -24,12 +24,12 @@ func (Detector) Scan(_ context.Context, u domain.Unit) ([]domain.Finding, error)
 	if u.Language != domain.LangGo {
 		return nil, nil
 	}
-	f, err := astgo.Parse(u.Path, u.Bytes)
+	f, err := golang.Parse(u.Path, u.Bytes)
 	if err != nil {
 		return nil, nil
 	}
 	var out []domain.Finding
-	f.WalkIdents(func(id astgo.Ident) {
+	f.WalkIdents(func(id golang.Ident) {
 		if !homoglyph.MixedScript(id.Name) {
 			return
 		}
@@ -54,7 +54,7 @@ func (Detector) Protect(_ context.Context, u domain.Unit) ([]ports.ProtectSpan, 
 	if u.Language != domain.LangGo {
 		return nil, nil
 	}
-	f, err := astgo.Parse(u.Path, u.Bytes)
+	f, err := golang.Parse(u.Path, u.Bytes)
 	if err != nil {
 		return nil, nil
 	}
@@ -87,12 +87,12 @@ func CommentFragments(u domain.Unit) []string {
 	if u.Language != domain.LangGo {
 		return nil
 	}
-	f, err := astgo.Parse(u.Path, u.Bytes)
+	f, err := golang.Parse(u.Path, u.Bytes)
 	if err != nil {
 		return nil
 	}
 	var out []string
-	f.WalkComments(func(c astgo.Comment) {
+	f.WalkComments(func(c golang.Comment) {
 		t := strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(c.Text, "//"), "/*"))
 		t = strings.TrimSuffix(t, "*/")
 		t = strings.TrimSpace(t)
